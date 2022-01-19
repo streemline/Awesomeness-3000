@@ -89,7 +89,7 @@ if len(sys.argv) > 1:
             raise Exception('Please put contents in the file.')
     except Exception as error:
         print(repr(error))
-        
+
     with open(sys.argv[1]) as f:
         reader = csv.reader(f, delimiter=';')
         create_rules_dict(reader)
@@ -104,13 +104,13 @@ else:
 rules_keys = natural_sort(rules_dict.keys())
 for rule_id in rules_keys:
     rule = rules_dict[rule_id]
-    
+
     print("")
     print( "#%s - %s" % (rule_id, rule['desc']) )
     print("")
-    
+
     del(rules_dict[rule_id]['desc'])
-    
+
     i = 0
     j = 0
     for target in rule.items():
@@ -125,25 +125,25 @@ for rule_id in rules_keys:
         else:
             addr_family = socket.AF_INET
             addr_family_info = " (IPv4)"
-       
+
         print( "\tDestination%s: %s" % (addr_family_info, target) )
         for port in rule[target]:
             i += 1
             port = port.strip()
-            
+
             # UDP
             if port.endswith("/udp"):
                 port = port.strip("/udp") 
-                
+
                 if not port.isdigit():
                     print("\t\tPort (%s) is not a number... SKIP" % (port))
                     continue
 
                 print("\t\tPort %6s (UDP)..." % (port)),
-                
+
                 sock = socket.socket(addr_family, socket.SOCK_DGRAM)
                 sock.settimeout(timeout)
-                
+
                 try:
                     sock.sendto("--PING--", (target, int(port)))
                     recv, svr = sock.recvfrom(255)
@@ -158,34 +158,34 @@ for rule_id in rules_keys:
                 if not port.isdigit():
                     print("\t\tPort (%s) is not a number... SKIP" % (port))
                     continue
-            
+
                 sys.stdout.write("\t\tPort \t%6s..." % (port))
                 sys.stdout.flush()
-            
+
                 sock = socket.socket(addr_family, socket.SOCK_STREAM)
                 sock.settimeout(timeout)
                 try:
                     result = sock.connect_ex((target,int(port)))
                 except socket.gaierror:
                     result = -1
- 
+
             if result == 0:
                 j += 1
                 print("open")
             elif result == errno.ECONNREFUSED and connref_is_open == True:
                 j += 1
                 print("open (NO SERVICE)")
-            elif result == errno.EAGAIN or result == errno.EWOULDBLOCK or result == errno.ECONNREFUSED:
-                print("closed") 
+            elif result in [errno.EAGAIN, errno.EWOULDBLOCK, errno.ECONNREFUSED]:
+                print("closed")
             elif result == errno.EHOSTUNREACH:
                 print("no route to host")
             elif result == -1:
                 print("hostname resolution error")
             else:
-                print("UNKNOWN error (%i - %s)" % (result, os.strerror(result))) 
+                print("UNKNOWN error (%i - %s)" % (result, os.strerror(result)))
             sys.stdout.flush()
         print("")
-        
+
     sys.stdout.write("    Guru-Meter:  ")
     sys.stdout.flush()
     if j == 0:
